@@ -520,6 +520,18 @@ dojo.declare("com.nuclearunicorn.game.EffectsManager", null, {
 					resName: resname,
 					type: "ratio"
 				};
+			case type == "ChallengeReductionRatio":
+				return {
+					title: $I("effectsMgr.type.resReductionRatio", [restitle]),
+					resName: resname,
+					type: "ratio"
+				};
+			case type == "ChallengeMitigation": //Reduce the severity of the ChallengeReductionRatio in the Island challenge 
+				return {
+					title: $I("effectsMgr.type.resChallengeMitigation", [restitle]),
+					resName: resname,
+					type: "ratio"
+				};
 			case type == "DemandRatio":
 				return {
 					title: $I("effectsMgr.type.resDemandRatio", [restitle]),
@@ -1732,6 +1744,24 @@ dojo.declare("com.nuclearunicorn.game.EffectsManager", null, {
 			},
 			"weaponEfficency":{
 				title: $I("effectsMgr.statics.weaponEfficency.title"),
+				type: "ratio"
+			},
+			"islandsIncreasingPenalty": {
+				title: $I("effectsMgr.statics.islandsIncreasingPenalty.title"),
+				type: "ratio"
+			},
+			"islandsMitigationEffectiveness": {
+				title: $I("effectsMgr.statics.islandsMitigationEffectiveness.title"),
+				type: "ratio"
+			},
+			
+			"islandAutomationBonus": {
+				title: $I("effectsMgr.statics.islandAutomationBonus.title"),
+				type: "ratio"
+			},
+			
+			"challengePenaltyMitigation": {
+				title: $I("effectsMgr.statics.challengePenaltyMitigation.title"),
 				type: "ratio"
 			},
 			"bonfireTearsPriceRatioChallenge": {
@@ -3261,6 +3291,13 @@ dojo.declare("com.nuclearunicorn.game.ui.GamePage", null, {
 		// +*RELIGION EFFECTS
 		perTick *= 1 + this.getEffect(res.name + "RatioReligion");
 
+		// +*CHALLENGE EFFECTS
+		
+		var mitigation = Math.max(0, 1 - this.getEffect(res.name + "ChallengeMitigation") * (1 + this.getEffect("challengePenaltyMitigation")));
+		var challengeEffect = 1 + Math.min(0,(this.getEffect(res.name + "ChallengeReductionRatio")) * mitigation);
+		//Calculate resource specific and global mitigation
+		perTick *= challengeEffect;
+
 		// +*AFTER PRODUCTION BOOST (UPGRADE EFFECTS SUPER)
 		perTick *= 1 + this.getEffect(res.name + "SuperRatio");
 
@@ -3504,6 +3541,15 @@ dojo.declare("com.nuclearunicorn.game.ui.GamePage", null, {
 			name: $I("res.stack.religion"),
 			type: "ratio",
 			value: this.getEffect(res.name + "RatioReligion")
+		});
+
+		var mitigation = Math.max(0, 1 - this.getEffect(res.name + "ChallengeMitigation") * (1 + this.getEffect("challengePenaltyMitigation")));
+		var challengeEffect = Math.min(0,(this.getEffect(res.name + "ChallengeReductionRatio")) * mitigation);
+
+		stack.push({
+			name: $I("res.stack.challenge"),
+			type: "ratio",
+			value: challengeEffect
 		});
 
 		// +*AFTER PRODUCTION BOOST (UPGRADE EFFECTS SUPER)

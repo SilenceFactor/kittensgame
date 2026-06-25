@@ -326,6 +326,111 @@ dojo.declare("classes.managers.ChallengesManager", com.nuclearunicorn.core.TabMa
 			return (tradepost.effects["tradeRatio"] * Math.min(tradepostLimit, tradepost.val * tradepostRatioLimit));
 		}
 	},{
+		name: "islands",
+		label: $I("challendge.islands.label"),
+		description: $I("challendge.islands.desc"),
+		effectDesc: $I("challendge.islands.effect.desc"),
+
+		stackOptions: {
+			"islandsIncreasingPenalty": { noStack: true },
+			"islandsMitigationEffectiveness": { noStack: true },
+			"catnipChallengeReductionRatio": { noStack: true },
+			"woodChallengeReductionRatio": { noStack: true },
+			"mineralsChallengeReductionRatio": { noStack: true },
+			"manpowerChallengeReductionRatio": { noStack: true },
+			"goldChallengeReductionRatio": { noStack: true },
+			"coalChallengeReductionRatio": { noStack: true },
+			"oilChallengeReductionRatio": { noStack: true }
+		},
+
+		effects: {
+			"islandsIncreasingPenalty": 0,
+			"islandsMitigationEffectiveness": 0,
+			"catnipChallengeReductionRatio": 0,
+			"woodChallengeReductionRatio": 0,
+			"mineralsChallengeReductionRatio": 0,
+			"manpowerChallengeReductionRatio": 0,
+			"goldChallengeReductionRatio": 0,
+			"coalChallengeReductionRatio": 0,
+			"oilChallengeReductionRatio": 0
+		},
+		
+		calculateEffects: function(self, game) {
+			
+			if (self.active) {
+				var increasingChallenge = 0.1 * self.on;				
+				self.effects["islandsIncreasingPenalty"] = Math.min(0.999, increasingChallenge);
+				increasingChallenge = -Math.min(0.999, game.getLimitedDR(0.7 * (1 + increasingChallenge), 1.09)); //Reach maximum reduction at 10 completions
+
+				var mitigationEffect = Math.max(0, 0.1 * (self.on - 10)); //After 10 completions, decrease the effectivness of mitigation effects
+				self.effects["islandsMitigationEffectiveness"] = game.getLimitedDR(mitigationEffect, 1);
+
+				self.effects["catnipChallengeReductionRatio"] = -0.25;
+				self.effects["woodChallengeReductionRatio"] = increasingChallenge;
+				self.effects["mineralsChallengeReductionRatio"] = increasingChallenge;
+				self.effects["manpowerChallengeReductionRatio"] = increasingChallenge;
+				self.effects["goldChallengeReductionRatio"] = increasingChallenge;
+				self.effects["coalChallengeReductionRatio"] = increasingChallenge;
+				self.effects["oilChallengeReductionRatio"] = increasingChallenge;
+
+
+
+				if (game.science.get("archery").researched && !game.workshop.get("fishingNets").unlocked) {
+					game.unlock({ upgrades: ["fishingNets"]});
+				}
+				if (game.science.get("engineering").researched && !game.workshop.get("improvedBoats").unlocked) {
+					game.unlock({ upgrades: ["improvedBoats"]});
+				}
+				if (game.science.get("writing").researched && !game.workshop.get("islandManagement").unlocked) {
+					game.unlock({ upgrades: ["islandManagement"]});
+				}
+				if (game.science.get("navigation").researched && !game.workshop.get("fleetCoordination").unlocked) {
+					game.unlock({buildings: ["glitteringIsland"]});
+					game.unlock({ upgrades: ["fleetCoordination"]});
+				}
+				if (game.workshop.get("pumpjack").researched && !game.workshop.get("offShoreDrilling").unlocked) {
+					game.unlock({ upgrades: ["offShoreDrilling"]});
+				}
+				if (game.science.get("mechanization").researched && !game.workshop.get("suspensionBridges").unlocked) {
+					game.unlock({ upgrades: ["suspensionBridges"]});
+				}
+				if (game.workshop.get("offShoreDrilling").researched) {
+					game.unlock({buildings: ["oilDeposit"]});
+				}
+
+				game.unlock	({buildings: ["lushIsland", "plainIsland", "rockyIsland", "cavernousIsland"]});
+				game.upgrade(self.upgrades);
+            } else {
+				self.effects["islandsIncreasingPenalty"] = 0;
+				self.effects["islandsMitigationEffectiveness"] = 0;
+				self.effects["catnipChallengeReductionRatio"] = 0;
+				self.effects["woodChallengeReductionRatio"] = 0;
+				self.effects["mineralsChallengeReductionRatio"] = 0;
+				self.effects["manpowerChallengeReductionRatio"] = 0;
+				self.effects["goldChallengeReductionRatio"] = 0;
+				self.effects["coalChallengeReductionRatio"] = 0;
+				self.effects["oilChallengeReductionRatio"] = 0;
+			}
+		},
+		checkCompletionCondition: function(game){
+			return game.space.getPlanet("piscine").reached;
+		},
+		actionOnCompletion: function(game){
+			var buildings = game.bld.getBuildingGroup("islands");
+			for (var i in buildings) {
+				buildings[i].unlocked = false;
+				buildings[i].unlockable = false;
+				buildings[i].val = 0;
+				buildings[i].on = 0;
+			}
+		},
+		upgrades: {
+			buildings: ["lushIsland", "plainIsland", "rockyIsland",
+			"cavernousIsland", "glitteringIsland", "oilDeposit"],
+			upgrades: ["fishingNets", "improvedBoats", "islandManagement",
+			"fleetCoordination", "offShoreDrilling", "suspensionBridges"]
+		}
+	},{
 		name: "unicornTears",
 		label: $I("challendge.unicornTears.label"),
 		description: $I("challendge.unicornTears.desc"),
