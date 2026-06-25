@@ -653,7 +653,7 @@ dojo.declare("classes.managers.ScienceManager", com.nuclearunicorn.core.TabManag
 			{name: 	"blueprint", val: 350}
 		],
 		unlocks: {
-			upgrades: ["eludiumCracker", "eludiumReflectors", "eludiumHuts", "mWReactor" /*, "eludiumDrill"*/],
+			upgrades: ["eludiumCracker", "eludiumReflectors", "eludiumHuts", "mWReactor", "freightfulExchange" /*, "eludiumDrill"*/],
 			crafts: ["eludium"],
 			stages: [{bld:"warehouse", stage:1}],
 		}
@@ -754,7 +754,7 @@ dojo.declare("classes.managers.ScienceManager", com.nuclearunicorn.core.TabManag
 			{name : "science", val: 235000}
 		],
 		unlocks: {
-			upgrades: ["energyRifts", "lhc"]
+			upgrades: ["energyRifts", "lhc", "transportSuperposition"]
 			// tech: ["artificialGravity"] -- see SPACE_EXPL feature flag
 		}
 	}, {
@@ -1079,7 +1079,7 @@ dojo.declare("classes.managers.ScienceManager", com.nuclearunicorn.core.TabManag
 		effects:{
 			"technocracyScienceCap": 0.2,
 			"antimatterPolicyRatio": 0.0625,
-			"queueCap": 2
+			"queueCapRatio": 0.2
 		},
 		unlocked: false,
 		blocked: false,
@@ -1170,7 +1170,7 @@ dojo.declare("classes.managers.ScienceManager", com.nuclearunicorn.core.TabManag
 			game.updateCaches();
 		},
 		unlocks: {
-			pacts: ["pactOfCleansing", "pactOfDestruction",  "pactOfExtermination", "pactOfPurity"]
+			pacts: ["pactOfCleansing", "pactOfDestruction",  "pactOfExtermination", "pactOfPurity", "pactOfChronicler", "pactOfArcane"]
 		},
 		unlocked: false,
 		blocked: false,
@@ -1412,50 +1412,16 @@ dojo.declare("classes.managers.ScienceManager", com.nuclearunicorn.core.TabManag
 		}
 	}, {
 		name: "sharkRelationsScribes",
-        label: $I("policy.sharkRelationsScribes.label"),
-        description: $I("policy.sharkRelationsScribes.desc"),
-        prices: [
-            {name : "culture", val: 2200}
-        ],
-        effects:{
-            "parchmentTradeChanceIncrease" : 0.25,
-			"manuscriptTradeChanceIncrease" : 0.15,
-			"ironBuyRatioIncrease": 0.5
-        },
-        unlocked: false,
-        blocked: false,
+		label: $I("policy.sharkRelationsScribes.label"),
+		description: $I("policy.sharkRelationsScribes.desc"),
+		prices: [
+			{name : "culture", val: 2200}
+		],
+		//effects: see DiplomacyManager#updateSharkScribes
+		unlocked: false,
+		blocked: false,
 		isRelation: true,
-        blocks:["sharkRelationsMerchants", "sharkRelationsBotanists"],
-		calculateEffects: function(self, game){
-			var sharks = game.diplomacy.get("sharks");
-				for (var i = 0; i < sharks.sells.length; i++) {
-					var sell = sharks.sells[i]["name"];
-					if (sell == "parchment") {
-						if (self.researched) {
-							sharks.sells[i].chance = 0.25 + self.effects["parchmentTradeChanceIncrease"];
-						} else {
-							sharks.sells[i].chance = 0.25;
-						}
-					}
-					if (sell == "manuscript"){
-						if (self.researched) {
-							sharks.sells[i].chance = 0.15 + self.effects["manuscriptTradeChanceIncrease"];
-						} else {
-							sharks.sells[i].chance = 0.15;
-						}
-					}
-				}
-				for (i = 0; i < sharks.buys.length; i++) {
-					var buy = sharks.buys[i]["name"];
-					if (buy == "iron") {
-						if (self.researched){
-							sharks.buys[i].val = 100 * (1 + self.effects["ironBuyRatioIncrease"]);
-						} else {
-							sharks.buys[i].val = 100;
-						}
-					}
-				}
-		},
+		blocks: [ "sharkRelationsMerchants", "sharkRelationsBotanists" ],
 		evaluateLocks: function(game){
 			return game.science.checkRelation("sharks", 20);
 		}
@@ -1492,7 +1458,8 @@ dojo.declare("classes.managers.ScienceManager", com.nuclearunicorn.core.TabManag
             "refinePolicyRatio" : 0.25,
 			"biolabEnergyRatio" : -0.75,
 			"breweryPolicyManpowerRatio" : 0.01,
-			"woodRatio" : 0
+			"woodRatio" : 0,
+			"biolabBiofuelScienceMaxRatio": 0.02
         },
         unlocked: false,
         blocked: false,

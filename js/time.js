@@ -733,6 +733,7 @@ dojo.declare("classes.managers.TimeManager", com.nuclearunicorn.core.TabManager,
 		game.upgrade({
 			buildings: ["pasture"]
 		});
+        this.updateQueue();
     },
     /* shatterInCycles does this:
     1) indepenently calculates space travel
@@ -823,6 +824,7 @@ dojo.declare("classes.managers.TimeManager", com.nuclearunicorn.core.TabManager,
 		this.game.upgrade({
 			buildings: ["pasture"]
 		});
+        this.updateQueue();
     },
     /*
     shatterInGroupCycles does this:
@@ -981,6 +983,7 @@ dojo.declare("classes.managers.TimeManager", com.nuclearunicorn.core.TabManager,
 		this.game.upgrade({
 			buildings: ["pasture"]
 		});
+        this.updateQueue();
     },
     compareShatterTime: function(shatters, times, ignoreOldFunction, ignoreShatterInCycles, ignoreGroupCycles){
         if (!ignoreOldFunction){
@@ -1527,17 +1530,23 @@ dojo.declare("classes.ui.time.UseHeatBtnController", com.nuclearunicorn.game.ui.
 		var price = this.getPricesMultiple(model, amt);
 		var furnace = this.game.time.getCFU("blastFurnace");
 		if (furnace.heat < price.heat) {
-			callback(false /*itemBought*/, { reason: "cannot-afford" });
-			return true;
+            return {
+                itemBought: false,
+                reason: "cannot-afford"
+            };
 		}
 		if (!model.enabled) {
-			callback(false /*itemBought*/, { reason: "not-enabled" });
-			return true;
+            return {
+                itemBought: false,
+                reason: "not-enabled"
+            };
 		}
 		furnace.heat -= price.heat;
 		this.doShatter(model, amt);
-		callback(true /*itemBought*/, { reason: "paid-for" });
-		return true;
+		return {
+            itemBought: true /*itemBought*/,
+            reason: "paid-for"
+        };
 	},
 
 	doShatterAmt: function(model, amt) {
@@ -1937,10 +1946,13 @@ dojo.declare("classes.ui.ResetWgt", [mixin.IChildrenAware, mixin.IGameAware], {
         var karmaPointsAfter = this.game.getUnlimitedDR(karmaKittens, stripe);
 		var karmaPoints = Math.floor((karmaPointsAfter - karmaPointsPresent) * 100) / 100;
 
+        var bonus = this.game.prestige.getResetBonusBreakdown(paragonPoints, karmaPoints);
 
-
-        msg += "<br>" + $I("time.reset.karma") + ": " + karmaPoints;
-        msg += "<br>" + $I("time.reset.paragon") + ": " + paragonPoints;
+        msg += "<br>" + $I("time.reset.karma") + ": " + karmaPoints
+            + " <span style='color:gray;'>(" + $I("time.reset.bonus.happiness", [this.game.getDisplayValueExt(bonus.happiness * 100)]) + ")</span>";
+        msg += "<br>" + $I("time.reset.paragon") + ": " + paragonPoints
+            + " <span style='color:gray;'>(" + $I("time.reset.bonus.storage", [this.game.getDisplayValueExt(bonus.storage * 100)])
+            + ", " + $I("time.reset.bonus.production", [this.game.getDisplayValueExt(bonus.production * 100)]) + ")</span>";
 
         if (this.game.ironWill){
             msg += "<br>" + $I("time.reset.zebra") + ": " + this.game._getBonusZebras();
@@ -2154,11 +2166,12 @@ dojo.declare("classes.queue.manager", null,{
     },
 
     /**
-     * Get maximum amount if individual (not grouped) items in the queue (see #queueLength)
+     * Get maximum amount of individual (not grouped) items in the queue (see #queueLength)
      */
     calculateCap: function(){
         var aiCore = this.game.bld.getBuildingExt("aiCore");
-        return aiCore.meta.on + this.game.space.getBuilding("entangler").effects["hashRateLevel"] + this.baseCap + this.game.getEffect("queueCap");
+        var capBeforeMultipliers = aiCore.meta.on + this.game.space.getBuilding("entangler").effects["hashRateLevel"] + this.baseCap + this.game.getEffect("queueCap");
+        return Math.floor(capBeforeMultipliers * (1 + this.game.getEffect("queueCapRatio")));
     },
 
     /**

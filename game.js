@@ -369,6 +369,8 @@ dojo.declare("classes.game.Server", null, {
 
 			self.game.load();
 			self.game.msg($I("save.import.msg"));
+
+			self.game.render();
 		});
 	},
 
@@ -693,7 +695,10 @@ dojo.declare("com.nuclearunicorn.game.EffectsManager", null, {
 				title: $I("effectsMgr.statics.tradeRatio.title"),
 				type: "ratio"
 			},
-
+			"tradeVolume": {
+				title: $I("effectsMgr.statics.tradeVolume.title"),
+				type: "ratio"
+			},
 			"standingRatio": {
 				title: $I("effectsMgr.statics.standingRatio.title"),
 				type: "ratio"
@@ -1112,8 +1117,12 @@ dojo.declare("com.nuclearunicorn.game.EffectsManager", null, {
                 type: "fixed"
             },
 			"queueCap": {
-                title: $I("effectsMgr.statics.queueCap"),
-                type: "fixed"
+				title: $I("effectsMgr.statics.queueCap"),
+				type: "fixed"
+			},
+			"queueCapRatio": {
+				title: $I("effectsMgr.statics.queueCapRatio"),
+				type: "ratio"
 			},
 			//Spaceports
 			"moonBaseStorageBonus": {
@@ -1494,14 +1503,6 @@ dojo.declare("com.nuclearunicorn.game.EffectsManager", null, {
 				title: $I("effectsMgr.statics.magnetoBoostBonusPolicy.title"),
 				type: "ratio"
 			},
-			"parchmentTradeChanceIncrease":{
-				title: $I("effectsMgr.statics.parchmentTradeChanceIncrease.title"),
-                type: "ratio" 
-			},
-			"manuscriptTradeChanceIncrease":{
-				title: $I("effectsMgr.statics.manuscriptTradeChanceIncrease.title"),
-                type: "ratio" 
-			},
 			"faithFromManuscripts":{
 				title: $I("effectsMgr.statics.faithFromManuscripts.title"),
                 type: "ratio" 
@@ -1526,12 +1527,12 @@ dojo.declare("com.nuclearunicorn.game.EffectsManager", null, {
 				title: $I("effectsMgr.statics.breweryPolicyManpowerRatio.title"),
 				type: "ratio"
 			},
-			"religionUpgradesDiscount":{
-				title: $I("effectsMgr.statics.religionUpgradesDiscount.title"),
+			"biolabBiofuelScienceMaxRatio": {
+				title: $I("effectsMgr.statics.biolabBiofuelScienceMaxRatio.title"),
 				type: "ratio"
 			},
-			"ironBuyRatioIncrease":{
-				title: $I("effectsMgr.statics.ironBuyRatioIncrease.title"),
+			"religionUpgradesDiscount":{
+				title: $I("effectsMgr.statics.religionUpgradesDiscount.title"),
 				type: "ratio"
 			},
 			"nagaBlueprintTradeChance":{
@@ -1959,12 +1960,15 @@ dojo.declare("com.nuclearunicorn.game.ui.GamePage", null, {
 	//current building selected in the Building tab by a mouse cursor, should affect resource table rendering
 	//TODO: move me to UI
 	selectedBuilding: null,
-	setSelectedObject: function(object) {
+	selectedBuildingDomNode: null,
+	setSelectedObject: function(object, domNode) {
 		this.selectedBuilding = object;
+		this.selectedBuildingDomNode = domNode;
 		this._publish("ui/update", this);
 	},
 	clearSelectedObject: function() {
 		this.selectedBuilding = null;
+		this.selectedBuildingDomNode = null;
 		this._publish("ui/update", this);
 	},
 
@@ -2417,6 +2421,9 @@ dojo.declare("com.nuclearunicorn.game.ui.GamePage", null, {
 		}
 
 		this.globalEffectsCached = {};
+
+		this.undoChange = null;
+		this._publish("server/undoStateChanged");
 	},
 
 	_publish: function(topic, arg){
@@ -3721,15 +3728,22 @@ dojo.declare("com.nuclearunicorn.game.ui.GamePage", null, {
 				type: "ratio",
 				value: spaceRatio - 1
 			});
-			spaceParagonSubStack.push({
-				name: $I("res.stack.spaceParagon"),
-				type: "ratio",
-				value: paragonSpaceProductionRatio - 1
-			});
+			var transferBonus = this.getEffect("prodTransferBonus");
+			// if transferBonus == 0, then it won't show up in the tooltip, but
+			// spaceParagon would still show up, which would make the tooltip
+			// look very misleading. so we manually hide the paragon line in
+			// this case; it's not useful anyways when transferBonus == 0.
+			if (transferBonus != 0) {
+				spaceParagonSubStack.push({
+					name: $I("res.stack.spaceParagon"),
+					type: "ratio",
+					value: paragonSpaceProductionRatio - 1
+				});
+			}
 			spaceParagonSubStack.push({
 				name: $I("res.stack.bonusTransf"),
 				type: "multiplier",
-				value: this.getEffect("prodTransferBonus")
+				value: transferBonus
 			});
 			perTickAutoprodSpaceStack.push(spaceParagonSubStack);
 		//<----
@@ -3805,6 +3819,18 @@ dojo.declare("com.nuclearunicorn.game.ui.GamePage", null, {
 				resConsumption += resConsumption * hapinnessConsumption * (1 + this.getEffect(res.name + "DemandWorkerRatioGlobal"));
 			} else {
 				resConsumption += resConsumption * hapinnessConsumption * (1 + this.getEffect(res.name + "DemandWorkerRatioGlobal")) * (1 - this.village.getFreeKittens() / this.village.sim.kittens.length);
+			}
+		}
+
+		if (res.name == "manpower"){
+			var biome = this.village.getBiome(this.village.map.currentBiome);
+			if (biome){
+				var exploreCost = this.village.map.getExplorationCost();
+				stack.push({
+					name: $I("res.stack.exploration"),
+					type: "fixed",
+					value: -exploreCost
+				});
 			}
 		}
 
@@ -4840,13 +4866,6 @@ dojo.declare("com.nuclearunicorn.game.ui.GamePage", null, {
 		var game = this;
 		game.ui.confirm($I("reset.confirmation.title"), msg, function() {
 			game.challenges.onRunReset();
-			if (game.challenges.isActive("atheism") && game.time.getVSU("cryochambers").on > 0) {
-				game.challenges.getChallenge("atheism").researched = true;
-
-				if (game.ironWill) {
-					game.achievements.unlockBadge("ivoryTower");
-				}
-			}
 			if (game.calendar.day < 0) {
 				game.achievements.unlockBadge("abOwo");
 			}

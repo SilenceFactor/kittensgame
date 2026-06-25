@@ -777,7 +777,8 @@ dojo.declare("classes.managers.WorkshopManager", com.nuclearunicorn.core.TabMana
 		description: $I("workshop.compositeBow.desc"),
 		effects: {
 			"manpowerJobRatio" : 0.5,
-			"manpowerMax": 0
+			"manpowerMax": 0,
+			"explorerAtk": 5
 		},
 		calculateEffects: function(self, game){
 			self.effects["manpowerJobRatio"] = 0.5 * (1 + game.getEffect("weaponEfficency")); //weaponEfficency can't go beyond -1, see challenges.js for more info
@@ -796,7 +797,8 @@ dojo.declare("classes.managers.WorkshopManager", com.nuclearunicorn.core.TabMana
 		label: $I("workshop.crossbow.label"),
 		description: $I("workshop.crossbow.desc"),
 		effects: {
-			"manpowerJobRatio" : 0.25
+			"manpowerJobRatio" : 0.25,
+			"explorerAtk": 10
 		},
 		calculateEffects: function(self, game){
 			self.effects["manpowerJobRatio"] = 0.25 * (1 + game.getEffect("weaponEfficency")); //weaponEfficency can't go beyond -1, see challenges.js for more info
@@ -810,7 +812,8 @@ dojo.declare("classes.managers.WorkshopManager", com.nuclearunicorn.core.TabMana
 		label: $I("workshop.railgun.label"),
 		description: $I("workshop.railgun.desc"),
 		effects: {
-			"manpowerJobRatio" : 0.25
+			"manpowerJobRatio" : 0.25,
+			"explorerAtk": 20,
 		},
 		calculateEffects: function(self, game){
 			self.effects["manpowerJobRatio"] = 0.25 * (1 + game.getEffect("weaponEfficency")); //weaponEfficency can't go beyond -1, see challenges.js for more info
@@ -827,6 +830,7 @@ dojo.declare("classes.managers.WorkshopManager", com.nuclearunicorn.core.TabMana
 		description: $I("workshop.bolas.desc"),
 		effects: {
 			"hunterRatio" : 1,
+			"explorerAtk": 2,
 			"manpowerMax": 0
 		},
 		calculateEffects: function(self, game){
@@ -844,6 +848,7 @@ dojo.declare("classes.managers.WorkshopManager", com.nuclearunicorn.core.TabMana
 		description: $I("workshop.huntingArmor.desc"),
 		effects: {
 			"hunterRatio" : 2,
+			"explorerDef": 2,
 			"manpowerMax": 0
 		},
 		calculateEffects: function(self, game){
@@ -859,7 +864,8 @@ dojo.declare("classes.managers.WorkshopManager", com.nuclearunicorn.core.TabMana
 		label: $I("workshop.steelArmor.label"),
 		description: $I("workshop.steelArmor.desc"),
 		effects: {
-			"hunterRatio" : 0.5
+			"hunterRatio" : 0.5,
+			"explorerDef": 5,
 		},
 		prices:[
 			{ name : "science", val: 10000 },
@@ -870,7 +876,8 @@ dojo.declare("classes.managers.WorkshopManager", com.nuclearunicorn.core.TabMana
 		label: $I("workshop.alloyArmor.label"),
 		description: $I("workshop.alloyArmor.desc"),
 		effects: {
-			"hunterRatio" : 0.5
+			"hunterRatio" : 0.5,
+			"explorerDef": 10,
 		},
 		prices:[
 			{ name : "science", val: 50000 },
@@ -881,7 +888,8 @@ dojo.declare("classes.managers.WorkshopManager", com.nuclearunicorn.core.TabMana
 		label: $I("workshop.nanosuits.label"),
 		description: $I("workshop.nanosuits.desc"),
 		effects: {
-			"hunterRatio" : 0.5
+			"hunterRatio" : 0.5,
+			"explorerDef": 20,
 		},
 		prices:[
 			{ name : "science", val: 185000 },
@@ -902,6 +910,49 @@ dojo.declare("classes.managers.WorkshopManager", com.nuclearunicorn.core.TabMana
 			buildings: ["tradepost"]
 		},
 		flavor: $I("workshop.caravanserai.flavor")
+	},
+	{
+		name: "freightfulExchange",
+		label: $I("workshop.freightfulExchange.label"),
+		description: $I("workshop.freightfulExchange.desc"),
+		effects: {
+		},
+		prices:[
+			{ name : "science", val: 450000},
+			{ name : "eludium", val: 100 },
+			{ name : "titanium", val: 1000 },
+			{ name : "tanker", val: 5000 }
+		],
+		upgrades: {
+			buildings: ["warehouse"],
+			stages: [{bld:"warehouse", stage:1}],
+		},
+		unlocks:{
+			upgrades: ["transportSuperposition"]
+		}
+		// flavor: $I("workshop.transportSuperposition.flavor")
+	
+	},
+	{
+		name: "transportSuperposition",
+		label: $I("workshop.transportSuperposition.label"),
+		description: $I("workshop.transportSuperposition.desc"),
+		effects: {
+		},
+		prices:[
+			{ name : "science", val: 500000},
+			{ name : "eludium", val: 1500 },
+			{ name : "thorium", val: 25000 },
+			{ name : "tanker", val: 500000 },
+		],
+		upgrades: {
+			buildings: ["warehouse"],
+			stages: [{bld:"warehouse", stage:1}],
+		},
+		flavor: $I("workshop.transportSuperposition.flavor"),
+		evaluateLocks: function(game){
+			return game.workshop.get("freightfulExchange").researched && game.science.get("dimensionalPhysics").researched;
+		}
 	},
 	//--------------------- stuff ----------------------
 	{
